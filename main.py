@@ -1,4 +1,4 @@
-import pygame, os, random
+import pygame, os, random, math
 
 pygame.init()
 WINDOW = pygame.display.set_mode((900, 500))
@@ -53,6 +53,75 @@ class Obstacle:
         self.move()
         self.draw()
 
+class Bullet:
+    vx = 5
+    scale = 0.04
+
+    def __init__(self, x, y):
+        self.rawPicture = pygame.image.load(ASSETSPATH + "bullet.png")
+        self.scaledPicture = pygame.transform.scale(self.rawPicture, (int(self.rawPicture.get_width() * self.scale), int(self.rawPicture.get_height() * self.scale)))
+        self.x = x
+        self.y = y
+        self.width = self.scaledPicture.get_width()
+        self.height = self.scaledPicture.get_height()
+        self.vy = random.randint(-3, 3)
+        self.picture = pygame.transform.rotate(self.scaledPicture, -(math.atan(self.vy / self.vx) * 180) / math.pi)
+
+    def move(self):
+        self.x += self.vx
+        self.y += self.vy
+
+    def draw(self):
+        WINDOW.blit(self.picture, (self.x, self.y))
+    
+    def behave(self):
+        self.move()
+        self.draw()
+
+class Car:
+    scale = 0.17
+
+    def __init__(self):
+        self.pictures = []
+        self.bullets = []
+        for i in range(1, 7):
+            rawPicture = pygame.image.load(ASSETSPATH + "car00" + str(i) + ".png")
+            picture = pygame.transform.scale(rawPicture, (int(rawPicture.get_width() * self.scale), int(rawPicture.get_height() * self.scale)))
+            self.pictures.append(picture)
+        self.width = self.pictures[0].get_width()
+        self.height = self.pictures[0].get_height()
+        self.x = 15
+        self.y = WINDOW.get_height() - 160 - self.height
+        self.lastUpdateTime = 0
+        self.pictureUpdatePeriod = 70 # Unit: ms
+        self.frame = 0
+        self.lastFiringTime = 0
+        self.reloadTime = 100 # Unit: ms
+    
+    def fire(self):
+        currentTime = pygame.time.get_ticks()
+        if currentTime - self.lastFiringTime >= self.reloadTime:
+            numBullets = random.randint(1, 3)
+            for i in range(numBullets):
+                self.bullets.append(Bullet(self.x + 150, self.y + 50))
+            self.lastFiringTime = currentTime
+    
+    def draw(self):
+        currentTime = pygame.time.get_ticks()
+        if currentTime - self.lastUpdateTime >= self.pictureUpdatePeriod:
+            if self.frame == 5:
+                self.frame = 0
+            else:
+                self.frame += 1
+            self.lastUpdateTime = currentTime
+        WINDOW.blit(self.pictures[self.frame], (self.x, self.y))
+    
+    def behave(self):
+        self.fire()
+        self.draw()
+        for bullet in self.bullets:
+            bullet.behave()
+
 class Character:
     scale = 0.2
 
@@ -83,7 +152,7 @@ class Character:
         self.ay = 0.5
         self.canJump = True
         self.lastUpdateTime = 0
-        self.coolDown = 70 # Unit: ms
+        self.pictureUpdatePeriod = 70 # Unit: ms
         self.frame = 0
     
     def jump(self):
@@ -97,7 +166,6 @@ class Character:
     
     def move(self, keys, obstacles):
         if self.name == "Elwood":
-            print(self.collideWithObstacles(obstacles))
             if keys[pygame.K_RIGHT]: 
                 if self.x + self.width < WINDOW.get_width() and not self.collideWithObstacles(obstacles):
                     self.x += self.vx
@@ -134,7 +202,7 @@ class Character:
 
     def draw(self):
         currentTime = pygame.time.get_ticks()
-        if currentTime - self.lastUpdateTime >= self.coolDown:
+        if currentTime - self.lastUpdateTime >= self.pictureUpdatePeriod:
             if self.frame == 5:
                 self.frame = 0
             else:
@@ -151,6 +219,7 @@ ground = []
 obstacles = [Obstacle(WINDOW.get_width() + int(0.5 * WINDOW.get_width()))]
 elwood = Character("Elwood")
 turner = Character("Turner")
+car = Car()
 
 def generateGround():
     position = 0
@@ -212,6 +281,7 @@ def main():
             spawnObstacles()
             behaveCharacters(keys, obstacles)
             behaveObstacles()
+            car.behave()
 
         if game == "fail screen":
             pass
