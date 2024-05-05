@@ -5,7 +5,7 @@ WINDOW = pygame.display.set_mode((900, 500))
 pygame.display.set_caption("Escape Nickel")
 FPS = 60
 
-RED_GRAY = (46, 40, 40)
+RED_GRAY = (112, 92, 89)
 ASSETSPATH = os.path.abspath(os.getcwd()) + "/Assets/"
 
 class Ground:
@@ -53,8 +53,86 @@ class Obstacle:
         self.move()
         self.draw()
 
+class Character:
+    scale = 0.2
+
+    def __init__(self, name):
+        self.pictures = []
+        self.name = name
+        try:
+            if self.name == "Elwood":
+                fileNameStart = "elwood00"
+                self.x = WINDOW.get_width() - (WINDOW.get_width() // 4)
+            elif self.name == "Turner":
+                fileNameStart = "turner00"
+                self.x = WINDOW.get_width() - (WINDOW.get_width() // 4) - 40
+            else:
+                raise FileNotFoundError
+        except FileNotFoundError:
+            print("ERROR: File name doesn't exist")
+        for i in range(1, 7):
+            rawPicture = pygame.image.load(ASSETSPATH + fileNameStart + str(i) + ".png")
+            picture = pygame.transform.scale(rawPicture, (int(rawPicture.get_width() * self.scale), int(rawPicture.get_height() * self.scale)))
+            self.pictures.append(picture)
+        self.width = self.pictures[0].get_width()
+        self.height = self.pictures[0].get_height()
+        self.y = WINDOW.get_height() - 160 - self.height
+        self.groundHeight = self.y
+        self.vx = 3
+        self.vy = 11
+        self.ay = 0.5
+        self.canJump = True
+        self.lastUpdateTime = 0
+        self.coolDown = 70 # Unit: ms
+        self.frame = 0
+    
+    def jump(self):
+        if not self.canJump:
+            self.y -= self.vy
+            self.vy -= self.ay
+            if self.y >= self.groundHeight:
+                self.y = self.groundHeight
+                self.canJump = True
+                self.vy = 11
+    
+    def move(self, keys):
+        if self.name == "Elwood":
+            if keys[pygame.K_RIGHT]: 
+                if self.x + self.width < WINDOW.get_width():
+                    self.x += self.vx
+            if keys[pygame.K_LEFT]: 
+                self.x -= self.vx
+            if keys[pygame.K_UP] and self.canJump:
+                self.canJump = False
+
+        else:
+            if keys[pygame.K_d]:
+                if self.x + self.width < WINDOW.get_width():
+                    self.x += self.vx
+            if keys[pygame.K_a]:
+                self.x -= self.vx
+            if keys[pygame.K_w] and self.canJump:
+                self.canJump = False
+        self.jump()
+
+    def draw(self):
+        currentTime = pygame.time.get_ticks()
+        if currentTime - self.lastUpdateTime >= self.coolDown:
+            if self.frame == 5:
+                self.frame = 0
+            else:
+                self.frame += 1
+            self.lastUpdateTime = currentTime
+        WINDOW.blit(self.pictures[self.frame], (self.x, self.y))
+
+    def behave(self, keys):
+        self.move(keys)
+        self.draw()
+
 ground = []
 obstacles = [Obstacle(WINDOW.get_width() + int(0.5 * WINDOW.get_width()))]
+elwood = Character("Elwood")
+turner = Character("Turner")
 
 def generateGround():
     position = 0
@@ -83,6 +161,10 @@ def behaveObstacles():
     if obstacles[0].x + obstacles[0].width < 0:
         obstacles.pop(0)
 
+def behaveCharacters(keys):
+    elwood.behave(keys)
+    turner.behave(keys)
+
 def checkRun():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -99,6 +181,7 @@ def main():
     generateGround()
 
     while run:
+        keys = pygame.key.get_pressed()
         fps.tick(FPS)
         run = checkRun()
 
@@ -109,6 +192,7 @@ def main():
             drawGameBackground()
             behaveGround()
             spawnObstacles()
+            behaveCharacters(keys)
             behaveObstacles()
 
         if game == "fail screen":
