@@ -97,6 +97,7 @@ class Character:
     
     def move(self, keys, obstacles):
         if self.name == "Elwood":
+            print(self.collideWithObstacles(obstacles))
             if keys[pygame.K_RIGHT]: 
                 if self.x + self.width < WINDOW.get_width() and not self.collideWithObstacles(obstacles):
                     self.x += self.vx
@@ -114,7 +115,7 @@ class Character:
                 self.canJump = False
         self.jump()
     
-    def colliding(self, object):
+    def collidesWith(self, object):
         if self.x <= object.x:
             left = self
             right = object
@@ -124,9 +125,12 @@ class Character:
         return ((left.x + left.width > right.x and left.x + left.width < right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or ((left.x < right.x and left.x + left.width > right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or (left.x + left.width > right.x + right.width and left.y < right.y and left.y + left.height + right.y + right.height)
 
     def collideWithObstacles(self, obstacles):
+        hasCollision = False
         for obstacle in obstacles:
-            if self.colliding(obstacle):
+            if self.collidesWith(obstacle):
                 self.x -= Ground.speed
+                hasCollision = True
+        return hasCollision
 
     def draw(self):
         currentTime = pygame.time.get_ticks()
