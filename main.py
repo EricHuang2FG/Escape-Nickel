@@ -95,25 +95,38 @@ class Character:
                 self.canJump = True
                 self.vy = 11
     
-    def move(self, keys):
+    def move(self, keys, obstacles):
         if self.name == "Elwood":
             if keys[pygame.K_RIGHT]: 
-                if self.x + self.width < WINDOW.get_width():
+                if self.x + self.width < WINDOW.get_width() and not self.collideWithObstacles(obstacles):
                     self.x += self.vx
             if keys[pygame.K_LEFT]: 
                 self.x -= self.vx
             if keys[pygame.K_UP] and self.canJump:
                 self.canJump = False
-
         else:
             if keys[pygame.K_d]:
-                if self.x + self.width < WINDOW.get_width():
+                if self.x + self.width < WINDOW.get_width() and not self.collideWithObstacles(obstacles):
                     self.x += self.vx
             if keys[pygame.K_a]:
                 self.x -= self.vx
             if keys[pygame.K_w] and self.canJump:
                 self.canJump = False
         self.jump()
+    
+    def colliding(self, object):
+        if self.x <= object.x:
+            left = self
+            right = object
+        else:
+            left = object
+            right = self
+        return ((left.x + left.width > right.x and left.x + left.width < right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or ((left.x < right.x and left.x + left.width > right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or (left.x + left.width > right.x + right.width and left.y < right.y and left.y + left.height + right.y + right.height)
+
+    def collideWithObstacles(self, obstacles):
+        for obstacle in obstacles:
+            if self.colliding(obstacle):
+                self.x -= Ground.speed
 
     def draw(self):
         currentTime = pygame.time.get_ticks()
@@ -125,8 +138,9 @@ class Character:
             self.lastUpdateTime = currentTime
         WINDOW.blit(self.pictures[self.frame], (self.x, self.y))
 
-    def behave(self, keys):
-        self.move(keys)
+    def behave(self, keys, obstacles):
+        self.move(keys, obstacles)
+        self.collideWithObstacles(obstacles)
         self.draw()
 
 ground = []
@@ -161,9 +175,9 @@ def behaveObstacles():
     if obstacles[0].x + obstacles[0].width < 0:
         obstacles.pop(0)
 
-def behaveCharacters(keys):
-    elwood.behave(keys)
-    turner.behave(keys)
+def behaveCharacters(keys, obstacles):
+    elwood.behave(keys, obstacles)
+    turner.behave(keys, obstacles)
 
 def checkRun():
     for event in pygame.event.get():
@@ -192,7 +206,7 @@ def main():
             drawGameBackground()
             behaveGround()
             spawnObstacles()
-            behaveCharacters(keys)
+            behaveCharacters(keys, obstacles)
             behaveObstacles()
 
         if game == "fail screen":
