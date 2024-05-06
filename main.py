@@ -64,12 +64,14 @@ class Bullet:
         self.y = y
         self.width = self.scaledPicture.get_width()
         self.height = self.scaledPicture.get_height()
-        self.vy = random.randint(-2, 2)
-        self.picture = pygame.transform.rotate(self.scaledPicture, -(math.atan(self.vy / self.vx) * 180) / math.pi)
+        self.vy = random.randint(-3, 3)
+        if self.vy == 1: 
+            self.vy = 2
+        self.picture = pygame.transform.rotate(self.scaledPicture, (math.atan(self.vy / self.vx) * 180) / math.pi)
 
     def move(self):
         self.x += self.vx
-        self.y += self.vy
+        self.y -= self.vy
 
     def draw(self):
         WINDOW.blit(self.picture, (self.x, self.y))
@@ -82,12 +84,14 @@ class GuidedBullet(Bullet):
     
     def __init__(self, x, y):
         super().__init__(x, y)
+        self.vx = 2
         self.vy = 0
         self.picture = self.scaledPicture
     
     def track(self, target):
-        self.vy = -target.vy
-        self.picture = pygame.transform.rotate(self.scaledPicture, -(math.atan(self.vy / self.vx) * 180) / math.pi)
+        self.vy = target.vy
+        self.y = target.y
+        self.picture = pygame.transform.rotate(self.scaledPicture, (math.atan(self.vy / self.vx) * 180) / math.pi)
     
     def behave(self, target):
         self.track(target)
@@ -279,7 +283,7 @@ def behaveCharacters(keys, obstacles):
     turner.behave(keys, obstacles)
 
 def playerIsKilled():
-    if elwood.collidesWith(car) or turner.collidesWith(car) or elwood.collidesWith(car.guidedBullet):
+    if elwood.collidesWith(car) or turner.collidesWith(car) or elwood.collidesWith(car.guidedBullet) or turner.collidesWith(car.guidedBullet):
         return True
     for bullet in car.getBullets():
         if elwood.collidesWith(bullet) or turner.collidesWith(bullet):
