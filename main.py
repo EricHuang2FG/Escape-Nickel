@@ -6,6 +6,7 @@ pygame.display.set_caption("Escape Nickel")
 FPS = 60
 
 RED_GRAY = (112, 92, 89)
+LIGHT_RED_GRAY = (156, 134, 131)
 ASSETSPATH = os.path.abspath(os.getcwd()) + "/Assets/"
 
 class Ground:
@@ -101,7 +102,7 @@ class GuidedBullet(Bullet):
 class Car:
     scale = 0.17
 
-    def __init__(self):
+    def __init__(self, sessionStartTime):
         self.pictures = []
         self.bullets = []
         for i in range(1, 7):
@@ -116,7 +117,7 @@ class Car:
         self.lastUpdateTime = 0
         self.pictureUpdatePeriod = 70 # Unit: ms
         self.frame = 0
-        self.lastFiringTime = 0
+        self.lastFiringTime = sessionStartTime
         self.reloadTime = 3000 # Unit: ms
     
     def getBullets(self):
@@ -166,7 +167,7 @@ class Character:
             else:
                 raise FileNotFoundError
         except FileNotFoundError:
-            print("ERROR: File name doesn't exist")
+            print("ERROR: File doesn't exist")
         for i in range(1, 7):
             rawPicture = pygame.image.load(ASSETSPATH + fileNameStart + str(i) + ".png")
             picture = pygame.transform.scale(rawPicture, (int(rawPicture.get_width() * self.scale), int(rawPicture.get_height() * self.scale)))
@@ -245,11 +246,38 @@ class Character:
         self.collideWithObstacles(obstacles)
         self.draw()
 
+class Button:
+    def __init__(self, pictureName, x, y, scale):
+        self.rawPicture = pygame.image.load(ASSETSPATH + pictureName)
+        self.picture = pygame.transform.scale(self.rawPicture, (int(self.rawPicture.get_width() * scale), int(self.rawPicture.get_height() * scale)))
+        self.buttonRectangle = self.picture.get_rect()
+        self.buttonRectangle.center = (x, y) # the coordinate is about the center
+        self.clicked = False
+    
+    def draw(self):
+        WINDOW.blit(self.picture, (self.buttonRectangle.x, self.buttonRectangle.y))
+    
+    def isClicked(self):
+        mousePos = pygame.mouse.get_pos()
+        if self.buttonRectangle.collidepoint(mousePos):
+            if pygame.mouse.get_pressed()[0] == 1 and not self.clicked:
+                self.clicked = True
+                return True
+        if pygame.mouse.get_pressed()[0] == 0:
+            self.clicked = False
+        return False
+
 ground = []
 obstacles = [Obstacle(WINDOW.get_width() + int(0.5 * WINDOW.get_width()))]
 elwood = Character("Elwood")
 turner = Character("Turner")
-car = Car()
+car = Car(0)
+playButton = Button("play_button.png", (3 * WINDOW.get_width()) // 2, WINDOW.get_height() - (WINDOW.get_height() // 6), 0.3)
+playAgainButton = Button("play_again_button.png", WINDOW.get_width() // 4 + 40, WINDOW.get_height() // 2 + WINDOW.get_height() // 4, 0.3)
+quitButton = Button("quit_button.png", (3 * WINDOW.get_width()) // 4 - 40, WINDOW.get_height() // 2 + WINDOW.get_height() // 4, 0.3)
+deathScreenText = pygame.image.load(ASSETSPATH + "you_died.png")
+rawFailScreenQuote = pygame.image.load(ASSETSPATH + "fail_screen_quote.png")
+failScreenQuote = pygame.transform.scale(rawFailScreenQuote, (int(rawFailScreenQuote.get_width() * 0.8), int(rawFailScreenQuote.get_height() * 0.8)))
 
 def generateGround():
     position = 0
@@ -305,11 +333,29 @@ def drawGameBackground():
 def drawDeathScreen(deathScreenText):
     WINDOW.blit(deathScreenText, ((WINDOW.get_width() // 2) - (deathScreenText.get_width() // 2), (WINDOW.get_height() // 2) - (deathScreenText.get_height() // 2)))
 
+def drawFailScreen():
+    WINDOW.fill(LIGHT_RED_GRAY)
+    WINDOW.blit(failScreenQuote, ((WINDOW.get_width() // 2) - (failScreenQuote.get_width() // 2), (WINDOW.get_height() // 2) - (failScreenQuote.get_height() // 2) - 50))
+    playAgainButton.draw()
+    quitButton.draw()
+
+def resetGame(sessionStartTime):
+    ground.clear()
+    generateGround()
+    obstacles.clear()
+    obstacles.append(Obstacle(WINDOW.get_width() + int(0.5 * WINDOW.get_width())))
+    global elwood
+    elwood = Character("Elwood")
+    global turner
+    turner = Character("Turner")
+    global car
+    car = Car(sessionStartTime)
+
 def main():
     fps = pygame.time.Clock()
     game = "game screen" # Temporary
     run = True
-    deathScreenText = pygame.image.load(ASSETSPATH + "you_died.png")
+    sessionStartTime = 0
     generateGround()
 
     while run:
@@ -328,7 +374,7 @@ def main():
             behaveCharacters(keys, obstacles)
             behaveObstacles()
             car.behave()
-            if gameRunningTime >= 30000:
+            if gameRunningTime - sessionStartTime >= 30000:
                 car.killElwood(elwood)
             if playerIsKilled():
                 deathScreenStartTime = pygame.time.get_ticks()
@@ -338,12 +384,18 @@ def main():
         
         if game == "death screen":
             currentTime = pygame.time.get_ticks()
-            if currentTime - deathScreenStartTime > 4000:
+            if currentTime - deathScreenStartTime > 2500:
                 game = "fail screen"
             drawDeathScreen(deathScreenText)
 
         if game == "fail screen":
-            pass
+            drawFailScreen()
+            if playAgainButton.isClicked():
+                sessionStartTime = pygame.time.get_ticks()
+                resetGame(sessionStartTime)
+                game = "game screen"
+            if quitButton.isClicked():
+                pass
     
         pygame.display.flip()
     pygame.quit()
