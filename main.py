@@ -54,7 +54,7 @@ class Obstacle:
         self.draw()
 
 class Bullet:
-    vx = 5
+    vx = 4
     scale = 0.04
 
     def __init__(self, x, y):
@@ -64,7 +64,7 @@ class Bullet:
         self.y = y
         self.width = self.scaledPicture.get_width()
         self.height = self.scaledPicture.get_height()
-        self.vy = random.randint(-3, 3)
+        self.vy = random.randint(-2, 2)
         self.picture = pygame.transform.rotate(self.scaledPicture, -(math.atan(self.vy / self.vx) * 180) / math.pi)
 
     def move(self):
@@ -96,14 +96,17 @@ class Car:
         self.pictureUpdatePeriod = 70 # Unit: ms
         self.frame = 0
         self.lastFiringTime = 0
-        self.reloadTime = 100 # Unit: ms
+        self.reloadTime = 3000 # Unit: ms
     
+    def getBullets(self):
+        return self.bullets
+
     def fire(self):
         currentTime = pygame.time.get_ticks()
         if currentTime - self.lastFiringTime >= self.reloadTime:
             numBullets = random.randint(1, 3)
             for i in range(numBullets):
-                self.bullets.append(Bullet(self.x + 150, self.y + 50))
+                self.bullets.append(Bullet(self.x + 155, self.y + 50))
             self.lastFiringTime = currentTime
     
     def draw(self):
@@ -121,6 +124,7 @@ class Car:
         self.draw()
         for bullet in self.bullets:
             bullet.behave()
+        self.bullets = [i for i in self.bullets if not i.x > WINDOW.get_width()]
 
 class Character:
     scale = 0.2
@@ -190,7 +194,7 @@ class Character:
         else:
             left = object
             right = self
-        return ((left.x + left.width > right.x and left.x + left.width < right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or ((left.x < right.x and left.x + left.width > right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or (left.x + left.width > right.x + right.width and left.y < right.y and left.y + left.height + right.y + right.height)
+        return ((left.x + left.width > right.x and left.x + left.width < right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or ((left.x < right.x and left.x + left.width > right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or (left.x + left.width > right.x + right.width and left.y < right.y and left.y + left.height > right.y + right.height)
 
     def collideWithObstacles(self, obstacles):
         hasCollision = False
@@ -236,7 +240,7 @@ def behaveGround():
 def spawnObstacles():
     position = obstacles[-1].x
     minSpacing = int(WINDOW.get_width() / 4)
-    maxSpacing = WINDOW.get_width()
+    maxSpacing = WINDOW.get_width() + (WINDOW.get_width() // 3)
     while len(obstacles) < 4:
         x = position + random.randint(minSpacing, maxSpacing)
         obstacles.append(Obstacle(x))
@@ -252,6 +256,17 @@ def behaveCharacters(keys, obstacles):
     elwood.behave(keys, obstacles)
     turner.behave(keys, obstacles)
 
+def playerIsKilled():
+    if elwood.collidesWith(car) or turner.collidesWith(car):
+        return True
+    for bullet in car.getBullets():
+        if elwood.collidesWith(bullet) or turner.collidesWith(bullet):
+            return True
+    return False
+
+def returnToStartScreen(keys):
+    return keys[pygame.K_ESCAPE]
+
 def checkRun():
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -265,6 +280,7 @@ def main():
     fps = pygame.time.Clock()
     game = "game screen" # Temporary
     run = True
+    deathScreenText = pygame.image.load(ASSETSPATH + "you_died.png")
     generateGround()
 
     while run:
@@ -282,6 +298,17 @@ def main():
             behaveCharacters(keys, obstacles)
             behaveObstacles()
             car.behave()
+            if playerIsKilled():
+                deathScreenStartTime = pygame.time.get_ticks()
+                game = "death screen"
+            if returnToStartScreen(keys):
+                game = "start screen"
+        
+        if game == "death screen":
+            currentTime = pygame.time.get_ticks()
+            if currentTime - deathScreenStartTime > 4000:
+                game = "fail screen"
+            WINDOW.blit(deathScreenText, ((WINDOW.get_width() // 2) - (deathScreenText.get_width() // 2), (WINDOW.get_height() // 2) - (deathScreenText.get_height() // 2)))
 
         if game == "fail screen":
             pass
