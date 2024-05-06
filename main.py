@@ -78,6 +78,22 @@ class Bullet:
         self.move()
         self.draw()
 
+class GuidedBullet(Bullet):
+    
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.vy = 0
+        self.picture = self.scaledPicture
+    
+    def track(self, target):
+        self.vy = -target.vy
+        self.picture = pygame.transform.rotate(self.scaledPicture, -(math.atan(self.vy / self.vx) * 180) / math.pi)
+    
+    def behave(self, target):
+        self.track(target)
+        self.move()
+        self.draw()
+
 class Car:
     scale = 0.17
 
@@ -92,6 +108,7 @@ class Car:
         self.height = self.pictures[0].get_height()
         self.x = 15
         self.y = WINDOW.get_height() - 160 - self.height
+        self.guidedBullet = GuidedBullet(self.x + 135, self.y + 50)
         self.lastUpdateTime = 0
         self.pictureUpdatePeriod = 70 # Unit: ms
         self.frame = 0
@@ -108,6 +125,9 @@ class Car:
             for i in range(numBullets):
                 self.bullets.append(Bullet(self.x + 155, self.y + 50))
             self.lastFiringTime = currentTime
+    
+    def killElwood(self, target):
+        self.guidedBullet.behave(target)
     
     def draw(self):
         currentTime = pygame.time.get_ticks()
@@ -152,7 +172,7 @@ class Character:
         self.y = WINDOW.get_height() - 160 - self.height
         self.groundHeight = self.y
         self.vx = 3
-        self.vy = 11
+        self.vy = 0
         self.ay = 0.5
         self.canJump = True
         self.lastUpdateTime = 0
@@ -166,7 +186,7 @@ class Character:
             if self.y >= self.groundHeight:
                 self.y = self.groundHeight
                 self.canJump = True
-                self.vy = 11
+                self.vy = 0
     
     def move(self, keys, obstacles):
         if self.name == "Elwood":
@@ -176,6 +196,7 @@ class Character:
             if keys[pygame.K_LEFT]: 
                 self.x -= self.vx
             if keys[pygame.K_UP] and self.canJump:
+                self.vy = 11
                 self.canJump = False
         else:
             if keys[pygame.K_d]:
@@ -184,6 +205,7 @@ class Character:
             if keys[pygame.K_a]:
                 self.x -= self.vx
             if keys[pygame.K_w] and self.canJump:
+                self.vy = 11
                 self.canJump = False
         self.jump()
     
@@ -257,7 +279,7 @@ def behaveCharacters(keys, obstacles):
     turner.behave(keys, obstacles)
 
 def playerIsKilled():
-    if elwood.collidesWith(car) or turner.collidesWith(car):
+    if elwood.collidesWith(car) or turner.collidesWith(car) or elwood.collidesWith(car.guidedBullet):
         return True
     for bullet in car.getBullets():
         if elwood.collidesWith(bullet) or turner.collidesWith(bullet):
@@ -276,6 +298,9 @@ def checkRun():
 def drawGameBackground():
     WINDOW.fill(RED_GRAY)
 
+def drawDeathScreen(deathScreenText):
+    WINDOW.blit(deathScreenText, ((WINDOW.get_width() // 2) - (deathScreenText.get_width() // 2), (WINDOW.get_height() // 2) - (deathScreenText.get_height() // 2)))
+
 def main():
     fps = pygame.time.Clock()
     game = "game screen" # Temporary
@@ -292,12 +317,15 @@ def main():
             pass
 
         if game == "game screen":
+            gameRunningTime = pygame.time.get_ticks()
             drawGameBackground()
             behaveGround()
             spawnObstacles()
             behaveCharacters(keys, obstacles)
             behaveObstacles()
             car.behave()
+            if gameRunningTime >= 30000:
+                car.killElwood(elwood)
             if playerIsKilled():
                 deathScreenStartTime = pygame.time.get_ticks()
                 game = "death screen"
@@ -308,7 +336,7 @@ def main():
             currentTime = pygame.time.get_ticks()
             if currentTime - deathScreenStartTime > 4000:
                 game = "fail screen"
-            WINDOW.blit(deathScreenText, ((WINDOW.get_width() // 2) - (deathScreenText.get_width() // 2), (WINDOW.get_height() // 2) - (deathScreenText.get_height() // 2)))
+            drawDeathScreen(deathScreenText)
 
         if game == "fail screen":
             pass
