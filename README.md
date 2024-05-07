@@ -1,0 +1,1 @@
+This is a simple 2D game created based on the book _The Nickel Boys_ by Colson Whitehead. For more information on how to play, visit the start screen of the game.  
