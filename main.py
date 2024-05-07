@@ -70,9 +70,11 @@ class Bullet:
         self.y = y
         self.width = self.scaledPicture.get_width()
         self.height = self.scaledPicture.get_height()
-        self.vy = random.randint(-2, 3)
+        self.vy = random.randint(-3, 3)
         if self.vy == 1: 
             self.vy = 2
+        if self.vy == -3:
+            self.vy = 0
         self.picture = pygame.transform.rotate(self.scaledPicture, (math.atan(self.vy / self.vx) * 180) / math.pi)
 
     def move(self):
