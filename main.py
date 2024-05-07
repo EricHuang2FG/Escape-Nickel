@@ -7,6 +7,11 @@ FPS = 60
 
 RED_GRAY = (112, 92, 89)
 LIGHT_RED_GRAY = (156, 134, 131)
+BLACK = (0, 0, 0)
+LIGHT_BLUE = (80, 196, 222)
+GREEN = (10, 171, 66)
+DESCRIPTION_FONT = pygame.font.SysFont("couriernew", 20, True)
+CONTROLS_FONT = pygame.font.SysFont("couriernew", 16, True)
 ASSETSPATH = os.path.abspath(os.getcwd()) + "/Assets/"
 
 class Ground:
@@ -65,7 +70,7 @@ class Bullet:
         self.y = y
         self.width = self.scaledPicture.get_width()
         self.height = self.scaledPicture.get_height()
-        self.vy = random.randint(-3, 3)
+        self.vy = random.randint(-2, 3)
         if self.vy == 1: 
             self.vy = 2
         self.picture = pygame.transform.rotate(self.scaledPicture, (math.atan(self.vy / self.vx) * 180) / math.pi)
@@ -272,9 +277,10 @@ obstacles = [Obstacle(WINDOW.get_width() + int(0.5 * WINDOW.get_width()))]
 elwood = Character("Elwood")
 turner = Character("Turner")
 car = Car(0)
-playButton = Button("play_button.png", (3 * WINDOW.get_width()) // 2, WINDOW.get_height() - (WINDOW.get_height() // 6), 0.3)
+playButton = Button("play_button.png", (3 * WINDOW.get_width()) // 4 - 140, WINDOW.get_height() - (WINDOW.get_height() // 6), 0.3)
 playAgainButton = Button("play_again_button.png", WINDOW.get_width() // 4 + 40, WINDOW.get_height() // 2 + WINDOW.get_height() // 4, 0.3)
 quitButton = Button("quit_button.png", (3 * WINDOW.get_width()) // 4 - 40, WINDOW.get_height() // 2 + WINDOW.get_height() // 4, 0.3)
+startScreenPicture = pygame.image.load(ASSETSPATH + "start_screen_background.png")
 deathScreenText = pygame.image.load(ASSETSPATH + "you_died.png")
 rawFailScreenQuote = pygame.image.load(ASSETSPATH + "fail_screen_quote.png")
 failScreenQuote = pygame.transform.scale(rawFailScreenQuote, (int(rawFailScreenQuote.get_width() * 0.8), int(rawFailScreenQuote.get_height() * 0.8)))
@@ -339,6 +345,34 @@ def drawFailScreen():
     playAgainButton.draw()
     quitButton.draw()
 
+def drawStartScreen():
+    WINDOW.blit(startScreenPicture, (0, 0))
+    descriptionBlock = [DESCRIPTION_FONT.render("It is Elwood and Turner's last and only chance", 1, BLACK),
+                        DESCRIPTION_FONT.render("to escape the absolute hell of Nickel Academy.", 1, BLACK),
+                        DESCRIPTION_FONT.render("Now, or never. They attempt a run for freedom,", 1, BLACK),
+                        DESCRIPTION_FONT.render("but are pursued by Nickel staff.", 1, BLACK),
+                        DESCRIPTION_FONT.render("", 1, BLACK),
+                        DESCRIPTION_FONT.render("Don't get hit by their car or bullets.", 1, BLACK)]
+    playerOneControlsBlock = [CONTROLS_FONT.render("  Player 1 (blue):", 1, LIGHT_BLUE),
+                              CONTROLS_FONT.render("     Up arrow -> jump, right arrow -> move forward, ", 1, LIGHT_BLUE),
+                              CONTROLS_FONT.render("     left arrow -> move backward", 1, LIGHT_BLUE),]
+    playerTwoControlsBlock = [CONTROLS_FONT.render("  Player 2 (green):", 1, GREEN),
+                              CONTROLS_FONT.render("     W -> jump, D -> move forward, A -> move backward", 1, GREEN)]
+    x = WINDOW.get_width() // 2 - 140
+    y = WINDOW.get_height() // 4 - 50
+    for text in descriptionBlock:
+        WINDOW.blit(text, (x, y))
+        y += 25
+    y += 15
+    for text in playerOneControlsBlock:
+        WINDOW.blit(text, (x, y))
+        y += 20
+    y += 15
+    for text in playerTwoControlsBlock:
+        WINDOW.blit(text, (x, y))
+        y += 20
+    playButton.draw()
+
 def resetGame(sessionStartTime):
     ground.clear()
     generateGround()
@@ -353,9 +387,8 @@ def resetGame(sessionStartTime):
 
 def main():
     fps = pygame.time.Clock()
-    game = "game screen" # Temporary
+    game = "start screen"
     run = True
-    sessionStartTime = 0
     generateGround()
 
     while run:
@@ -364,7 +397,11 @@ def main():
         run = checkRun()
 
         if game == "start screen":
-            pass
+            drawStartScreen()
+            if playButton.isClicked():
+                sessionStartTime = pygame.time.get_ticks()
+                resetGame(sessionStartTime)
+                game = "game screen"
 
         if game == "game screen":
             gameRunningTime = pygame.time.get_ticks()
@@ -395,7 +432,7 @@ def main():
                 resetGame(sessionStartTime)
                 game = "game screen"
             if quitButton.isClicked():
-                pass
+                game = "start screen"
     
         pygame.display.flip()
     pygame.quit()
