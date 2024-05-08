@@ -378,8 +378,8 @@ def drawStartScreen():
 def drawEpilogueScreen():
     WINDOW.fill(LIGHT_RED_GRAY)
     epilogueBlock = [DESCRIPTION_FONT.render("Elwood died, but his beliefs and values cannot be killed;", 1, BLACK),
-                     DESCRIPTION_FONT.render("they transcend through time, and pass to those who survived,", 1, BLACK),
-                     DESCRIPTION_FONT.render("their children,", 1, BLACK),
+                     DESCRIPTION_FONT.render("they persist under oppression, and transcend through time;", 1, BLACK),
+                     DESCRIPTION_FONT.render("they pass to those who survived, their children,", 1, BLACK),
                      DESCRIPTION_FONT.render("and the children of their children...", 1, BLACK)]
     y = (WINDOW.get_height() // 3) + 30
     for text in epilogueBlock:
