@@ -375,6 +375,18 @@ def drawStartScreen():
         y += 20
     playButton.draw()
 
+def drawEpilogueScreen():
+    WINDOW.fill(LIGHT_RED_GRAY)
+    epilogueBlock = [DESCRIPTION_FONT.render("Elwood died, but his beliefs and values cannot be killed;", 1, BLACK),
+                     DESCRIPTION_FONT.render("they transcend through time, and pass to those who survived,", 1, BLACK),
+                     DESCRIPTION_FONT.render("their children,", 1, BLACK),
+                     DESCRIPTION_FONT.render("and the children of their children...", 1, BLACK)]
+    y = (WINDOW.get_height() // 3) + 30
+    for text in epilogueBlock:
+        textRect = text.get_rect(center = (WINDOW.get_width() // 2, y))
+        WINDOW.blit(text, textRect)
+        y += 25
+
 def resetGame(sessionStartTime):
     ground.clear()
     generateGround()
@@ -422,8 +434,7 @@ def main():
                 game = "start screen"
         
         if game == "death screen":
-            currentTime = pygame.time.get_ticks()
-            if currentTime - deathScreenStartTime > 2500:
+            if pygame.time.get_ticks() - deathScreenStartTime > 2500:
                 game = "fail screen"
             drawDeathScreen(deathScreenText)
 
@@ -434,7 +445,13 @@ def main():
                 resetGame(sessionStartTime)
                 game = "game screen"
             if quitButton.isClicked():
+                epilogueScreenStartTime = pygame.time.get_ticks()
+                game = "epilogue screen"
+        
+        if game == "epilogue screen":
+            if pygame.time.get_ticks() - epilogueScreenStartTime >= 5000:
                 game = "start screen"
+            drawEpilogueScreen()
     
         pygame.display.flip()
     pygame.quit()
