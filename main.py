@@ -449,7 +449,7 @@ def main():
                 game = "epilogue screen"
         
         if game == "epilogue screen":
-            if pygame.time.get_ticks() - epilogueScreenStartTime >= 5000:
+            if pygame.time.get_ticks() - epilogueScreenStartTime >= 10000:
                 game = "start screen"
             drawEpilogueScreen()
     
