@@ -14,6 +14,7 @@ DESCRIPTION_FONT = pygame.font.SysFont("couriernew", 20, True)
 CONTROLS_FONT = pygame.font.SysFont("couriernew", 16, True)
 ASSETSPATH = os.path.abspath(os.getcwd()) + "/Assets/"
 
+
 class Ground:
     speed = 7
 
@@ -29,10 +30,11 @@ class Ground:
 
     def draw(self):
         WINDOW.blit(self.picture, (self.x, self.y))
-    
+
     def behave(self):
         self.move()
         self.draw()
+
 
 class Obstacle:
     scale = 0.07
@@ -40,24 +42,37 @@ class Obstacle:
     def __init__(self, x):
         self.rawPicture = pygame.image.load(ASSETSPATH + "obstacle.png")
         if random.randint(1, 2) == 1:
-            self.picture = pygame.transform.scale(self.rawPicture, (int(self.rawPicture.get_width() * self.scale), int(self.rawPicture.get_height() * (self.scale))))
+            self.picture = pygame.transform.scale(
+                self.rawPicture,
+                (
+                    int(self.rawPicture.get_width() * self.scale),
+                    int(self.rawPicture.get_height() * (self.scale)),
+                ),
+            )
         else:
-            self.picture = pygame.transform.scale(self.rawPicture, (int(self.rawPicture.get_width() * self.scale), int(self.rawPicture.get_height() * (self.scale + 0.05))))
+            self.picture = pygame.transform.scale(
+                self.rawPicture,
+                (
+                    int(self.rawPicture.get_width() * self.scale),
+                    int(self.rawPicture.get_height() * (self.scale + 0.05)),
+                ),
+            )
         self.x = x
         self.y = WINDOW.get_height() - 160 - self.picture.get_height()
         self.width = self.picture.get_width()
         self.height = self.picture.get_height()
         self.speed = Ground.speed
-    
+
     def move(self):
         self.x -= self.speed
 
     def draw(self):
         WINDOW.blit(self.picture, (self.x, self.y))
-    
+
     def behave(self):
         self.move()
         self.draw()
+
 
 class Bullet:
     vx = 4
@@ -65,17 +80,25 @@ class Bullet:
 
     def __init__(self, x, y):
         self.rawPicture = pygame.image.load(ASSETSPATH + "bullet.png")
-        self.scaledPicture = pygame.transform.scale(self.rawPicture, (int(self.rawPicture.get_width() * self.scale), int(self.rawPicture.get_height() * self.scale)))
+        self.scaledPicture = pygame.transform.scale(
+            self.rawPicture,
+            (
+                int(self.rawPicture.get_width() * self.scale),
+                int(self.rawPicture.get_height() * self.scale),
+            ),
+        )
         self.x = x
         self.y = y
         self.width = self.scaledPicture.get_width()
         self.height = self.scaledPicture.get_height()
         self.vy = random.randint(-3, 3)
-        if self.vy == 1: 
+        if self.vy == 1:
             self.vy = 2
         if self.vy == -3:
             self.vy = 0
-        self.picture = pygame.transform.rotate(self.scaledPicture, (math.atan(self.vy / self.vx) * 180) / math.pi)
+        self.picture = pygame.transform.rotate(
+            self.scaledPicture, (math.atan(self.vy / self.vx) * 180) / math.pi
+        )
 
     def move(self):
         self.x += self.vx
@@ -83,28 +106,32 @@ class Bullet:
 
     def draw(self):
         WINDOW.blit(self.picture, (self.x, self.y))
-    
+
     def behave(self):
         self.move()
         self.draw()
 
+
 class GuidedBullet(Bullet):
-    
+
     def __init__(self, x, y):
         super().__init__(x, y)
         self.vx = 2
         self.vy = 0
         self.picture = self.scaledPicture
-    
+
     def track(self, target):
         self.vy = target.vy
         self.y = target.y
-        self.picture = pygame.transform.rotate(self.scaledPicture, (math.atan(self.vy / self.vx) * 180) / math.pi)
-    
+        self.picture = pygame.transform.rotate(
+            self.scaledPicture, (math.atan(self.vy / self.vx) * 180) / math.pi
+        )
+
     def behave(self, target):
         self.track(target)
         self.move()
         self.draw()
+
 
 class Car:
     scale = 0.17
@@ -114,7 +141,13 @@ class Car:
         self.bullets = []
         for i in range(1, 7):
             rawPicture = pygame.image.load(ASSETSPATH + "car00" + str(i) + ".png")
-            picture = pygame.transform.scale(rawPicture, (int(rawPicture.get_width() * self.scale), int(rawPicture.get_height() * self.scale)))
+            picture = pygame.transform.scale(
+                rawPicture,
+                (
+                    int(rawPicture.get_width() * self.scale),
+                    int(rawPicture.get_height() * self.scale),
+                ),
+            )
             self.pictures.append(picture)
         self.width = self.pictures[0].get_width()
         self.height = self.pictures[0].get_height()
@@ -122,11 +155,11 @@ class Car:
         self.y = WINDOW.get_height() - 160 - self.height
         self.guidedBullet = GuidedBullet(self.x + 135, self.y + 50)
         self.lastUpdateTime = 0
-        self.pictureUpdatePeriod = 70 # Unit: ms
+        self.pictureUpdatePeriod = 70  # Unit: ms
         self.frame = 0
         self.lastFiringTime = sessionStartTime
-        self.reloadTime = 3000 # Unit: ms
-    
+        self.reloadTime = 3000  # Unit: ms
+
     def getBullets(self):
         return self.bullets
 
@@ -137,10 +170,10 @@ class Car:
             for i in range(numBullets):
                 self.bullets.append(Bullet(self.x + 155, self.y + 50))
             self.lastFiringTime = currentTime
-    
+
     def killElwood(self, target):
         self.guidedBullet.behave(target)
-    
+
     def draw(self):
         currentTime = pygame.time.get_ticks()
         if currentTime - self.lastUpdateTime >= self.pictureUpdatePeriod:
@@ -150,13 +183,14 @@ class Car:
                 self.frame += 1
             self.lastUpdateTime = currentTime
         WINDOW.blit(self.pictures[self.frame], (self.x, self.y))
-    
+
     def behave(self):
         self.fire()
         self.draw()
         for bullet in self.bullets:
             bullet.behave()
         self.bullets = [i for i in self.bullets if not i.x > WINDOW.get_width()]
+
 
 class Character:
     scale = 0.2
@@ -177,7 +211,13 @@ class Character:
             print("ERROR: File doesn't exist")
         for i in range(1, 7):
             rawPicture = pygame.image.load(ASSETSPATH + fileNameStart + str(i) + ".png")
-            picture = pygame.transform.scale(rawPicture, (int(rawPicture.get_width() * self.scale), int(rawPicture.get_height() * self.scale)))
+            picture = pygame.transform.scale(
+                rawPicture,
+                (
+                    int(rawPicture.get_width() * self.scale),
+                    int(rawPicture.get_height() * self.scale),
+                ),
+            )
             self.pictures.append(picture)
         self.width = self.pictures[0].get_width()
         self.height = self.pictures[0].get_height()
@@ -188,9 +228,9 @@ class Character:
         self.ay = 0.5
         self.canJump = True
         self.lastUpdateTime = 0
-        self.pictureUpdatePeriod = 70 # Unit: ms
+        self.pictureUpdatePeriod = 70  # Unit: ms
         self.frame = 0
-    
+
     def jump(self):
         if not self.canJump:
             self.y -= self.vy
@@ -199,20 +239,26 @@ class Character:
                 self.y = self.groundHeight
                 self.canJump = True
                 self.vy = 0
-    
+
     def move(self, keys, obstacles):
         if self.name == "Elwood":
-            if keys[pygame.K_RIGHT]: 
-                if self.x + self.width < WINDOW.get_width() and not self.collideWithObstacles(obstacles):
+            if keys[pygame.K_RIGHT]:
+                if (
+                    self.x + self.width < WINDOW.get_width()
+                    and not self.collideWithObstacles(obstacles)
+                ):
                     self.x += self.vx
-            if keys[pygame.K_LEFT]: 
+            if keys[pygame.K_LEFT]:
                 self.x -= self.vx
             if keys[pygame.K_UP] and self.canJump:
                 self.vy = 11
                 self.canJump = False
         else:
             if keys[pygame.K_d]:
-                if self.x + self.width < WINDOW.get_width() and not self.collideWithObstacles(obstacles):
+                if (
+                    self.x + self.width < WINDOW.get_width()
+                    and not self.collideWithObstacles(obstacles)
+                ):
                     self.x += self.vx
             if keys[pygame.K_a]:
                 self.x -= self.vx
@@ -220,7 +266,7 @@ class Character:
                 self.vy = 11
                 self.canJump = False
         self.jump()
-    
+
     def collidesWith(self, object):
         if self.x <= object.x:
             left = self
@@ -228,7 +274,36 @@ class Character:
         else:
             left = object
             right = self
-        return ((left.x + left.width > right.x and left.x + left.width < right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or ((left.x < right.x and left.x + left.width > right.x + right.width) and ((left.y > right.y and left.y < right.y + right.height) or (left.y + left.height > right.y and left.y + left.height < right.y + right.height))) or (left.x + left.width > right.x + right.width and left.y < right.y and left.y + left.height > right.y + right.height)
+        return (
+            (
+                (
+                    left.x + left.width > right.x
+                    and left.x + left.width < right.x + right.width
+                )
+                and (
+                    (left.y > right.y and left.y < right.y + right.height)
+                    or (
+                        left.y + left.height > right.y
+                        and left.y + left.height < right.y + right.height
+                    )
+                )
+            )
+            or (
+                (left.x < right.x and left.x + left.width > right.x + right.width)
+                and (
+                    (left.y > right.y and left.y < right.y + right.height)
+                    or (
+                        left.y + left.height > right.y
+                        and left.y + left.height < right.y + right.height
+                    )
+                )
+            )
+            or (
+                left.x + left.width > right.x + right.width
+                and left.y < right.y
+                and left.y + left.height > right.y + right.height
+            )
+        )
 
     def collideWithObstacles(self, obstacles):
         hasCollision = False
@@ -253,17 +328,24 @@ class Character:
         self.collideWithObstacles(obstacles)
         self.draw()
 
+
 class Button:
     def __init__(self, pictureName, x, y, scale):
         self.rawPicture = pygame.image.load(ASSETSPATH + pictureName)
-        self.picture = pygame.transform.scale(self.rawPicture, (int(self.rawPicture.get_width() * scale), int(self.rawPicture.get_height() * scale)))
+        self.picture = pygame.transform.scale(
+            self.rawPicture,
+            (
+                int(self.rawPicture.get_width() * scale),
+                int(self.rawPicture.get_height() * scale),
+            ),
+        )
         self.buttonRectangle = self.picture.get_rect()
-        self.buttonRectangle.center = (x, y) # the coordinate is about the center
+        self.buttonRectangle.center = (x, y)  # the coordinate is about the center
         self.clicked = False
-    
+
     def draw(self):
         WINDOW.blit(self.picture, (self.buttonRectangle.x, self.buttonRectangle.y))
-    
+
     def isClicked(self):
         mousePos = pygame.mouse.get_pos()
         if self.buttonRectangle.collidepoint(mousePos):
@@ -274,18 +356,41 @@ class Button:
             self.clicked = False
         return False
 
+
 ground = []
 obstacles = [Obstacle(WINDOW.get_width() + int(0.5 * WINDOW.get_width()))]
 elwood = Character("Elwood")
 turner = Character("Turner")
 car = Car(0)
-playButton = Button("play_button.png", (3 * WINDOW.get_width()) // 4 - 140, WINDOW.get_height() - (WINDOW.get_height() // 6), 0.3)
-playAgainButton = Button("play_again_button.png", WINDOW.get_width() // 4 + 40, WINDOW.get_height() // 2 + WINDOW.get_height() // 4, 0.3)
-quitButton = Button("quit_button.png", (3 * WINDOW.get_width()) // 4 - 40, WINDOW.get_height() // 2 + WINDOW.get_height() // 4, 0.3)
+playButton = Button(
+    "play_button.png",
+    (3 * WINDOW.get_width()) // 4 - 140,
+    WINDOW.get_height() - (WINDOW.get_height() // 6),
+    0.3,
+)
+playAgainButton = Button(
+    "play_again_button.png",
+    WINDOW.get_width() // 4 + 40,
+    WINDOW.get_height() // 2 + WINDOW.get_height() // 4,
+    0.3,
+)
+quitButton = Button(
+    "quit_button.png",
+    (3 * WINDOW.get_width()) // 4 - 40,
+    WINDOW.get_height() // 2 + WINDOW.get_height() // 4,
+    0.3,
+)
 startScreenPicture = pygame.image.load(ASSETSPATH + "start_screen_background.png")
 deathScreenText = pygame.image.load(ASSETSPATH + "you_died.png")
 rawFailScreenQuote = pygame.image.load(ASSETSPATH + "fail_screen_quote.png")
-failScreenQuote = pygame.transform.scale(rawFailScreenQuote, (int(rawFailScreenQuote.get_width() * 0.8), int(rawFailScreenQuote.get_height() * 0.8)))
+failScreenQuote = pygame.transform.scale(
+    rawFailScreenQuote,
+    (
+        int(rawFailScreenQuote.get_width() * 0.8),
+        int(rawFailScreenQuote.get_height() * 0.8),
+    ),
+)
+
 
 def generateGround():
     position = 0
@@ -293,11 +398,13 @@ def generateGround():
         ground.append(Ground(position))
         position += WINDOW.get_width()
 
+
 def behaveGround():
     for segment in ground:
         segment.behave()
         if segment.x + segment.width < 0:
             segment.x += len(ground) * segment.width
+
 
 def spawnObstacles():
     position = obstacles[-1].x
@@ -308,26 +415,36 @@ def spawnObstacles():
         obstacles.append(Obstacle(x))
         position = x
 
+
 def behaveObstacles():
     for obstacle in obstacles:
         obstacle.behave()
     if obstacles[0].x + obstacles[0].width < 0:
         obstacles.pop(0)
 
+
 def behaveCharacters(keys, obstacles):
     elwood.behave(keys, obstacles)
     turner.behave(keys, obstacles)
 
+
 def playerIsKilled():
-    if elwood.collidesWith(car) or turner.collidesWith(car) or elwood.collidesWith(car.guidedBullet) or turner.collidesWith(car.guidedBullet):
+    if (
+        elwood.collidesWith(car)
+        or turner.collidesWith(car)
+        or elwood.collidesWith(car.guidedBullet)
+        or turner.collidesWith(car.guidedBullet)
+    ):
         return True
     for bullet in car.getBullets():
         if elwood.collidesWith(bullet) or turner.collidesWith(bullet):
             return True
     return False
 
+
 def returnToStartScreen(keys):
     return keys[pygame.K_ESCAPE]
+
 
 def checkRun():
     for event in pygame.event.get():
@@ -335,31 +452,63 @@ def checkRun():
             return False
     return True
 
+
 def drawGameBackground():
     WINDOW.fill(RED_GRAY)
 
+
 def drawDeathScreen(deathScreenText):
-    WINDOW.blit(deathScreenText, ((WINDOW.get_width() // 2) - (deathScreenText.get_width() // 2), (WINDOW.get_height() // 2) - (deathScreenText.get_height() // 2)))
+    WINDOW.blit(
+        deathScreenText,
+        (
+            (WINDOW.get_width() // 2) - (deathScreenText.get_width() // 2),
+            (WINDOW.get_height() // 2) - (deathScreenText.get_height() // 2),
+        ),
+    )
+
 
 def drawFailScreen():
     WINDOW.fill(LIGHT_RED_GRAY)
-    WINDOW.blit(failScreenQuote, ((WINDOW.get_width() // 2) - (failScreenQuote.get_width() // 2), (WINDOW.get_height() // 2) - (failScreenQuote.get_height() // 2) - 50))
+    WINDOW.blit(
+        failScreenQuote,
+        (
+            (WINDOW.get_width() // 2) - (failScreenQuote.get_width() // 2),
+            (WINDOW.get_height() // 2) - (failScreenQuote.get_height() // 2) - 50,
+        ),
+    )
     playAgainButton.draw()
     quitButton.draw()
 
+
 def drawStartScreen():
     WINDOW.blit(startScreenPicture, (0, 0))
-    descriptionBlock = [DESCRIPTION_FONT.render("It is Elwood and Turner's last and only chance", 1, BLACK),
-                        DESCRIPTION_FONT.render("to escape the absolute hell of Nickel Academy.", 1, BLACK),
-                        DESCRIPTION_FONT.render("Now, or never. They attempt a run for freedom,", 1, BLACK),
-                        DESCRIPTION_FONT.render("but are pursued by Nickel staff.", 1, BLACK),
-                        DESCRIPTION_FONT.render("", 1, BLACK),
-                        DESCRIPTION_FONT.render("Don't get hit by their car or bullets.", 1, BLACK)]
-    playerOneControlsBlock = [CONTROLS_FONT.render("  Player 1 (blue):", 1, LIGHT_BLUE),
-                              CONTROLS_FONT.render("     Up arrow -> jump, right arrow -> move forward, ", 1, LIGHT_BLUE),
-                              CONTROLS_FONT.render("     left arrow -> move backward", 1, LIGHT_BLUE),]
-    playerTwoControlsBlock = [CONTROLS_FONT.render("  Player 2 (green):", 1, GREEN),
-                              CONTROLS_FONT.render("     W -> jump, D -> move forward, A -> move backward", 1, GREEN)]
+    descriptionBlock = [
+        DESCRIPTION_FONT.render(
+            "It is Elwood and Turner's last and only chance", 1, BLACK
+        ),
+        DESCRIPTION_FONT.render(
+            "to escape the absolute hell of Nickel Academy.", 1, BLACK
+        ),
+        DESCRIPTION_FONT.render(
+            "Now, or never. They attempt a run for freedom,", 1, BLACK
+        ),
+        DESCRIPTION_FONT.render("but are pursued by Nickel staff.", 1, BLACK),
+        DESCRIPTION_FONT.render("", 1, BLACK),
+        DESCRIPTION_FONT.render("Don't get hit by their car or bullets.", 1, BLACK),
+    ]
+    playerOneControlsBlock = [
+        CONTROLS_FONT.render("  Player 1 (blue):", 1, LIGHT_BLUE),
+        CONTROLS_FONT.render(
+            "     Up arrow -> jump, right arrow -> move forward, ", 1, LIGHT_BLUE
+        ),
+        CONTROLS_FONT.render("     left arrow -> move backward", 1, LIGHT_BLUE),
+    ]
+    playerTwoControlsBlock = [
+        CONTROLS_FONT.render("  Player 2 (green):", 1, GREEN),
+        CONTROLS_FONT.render(
+            "     W -> jump, D -> move forward, A -> move backward", 1, GREEN
+        ),
+    ]
     x = WINDOW.get_width() // 2 - 140
     y = WINDOW.get_height() // 4 - 50
     for text in descriptionBlock:
@@ -375,17 +524,27 @@ def drawStartScreen():
         y += 20
     playButton.draw()
 
+
 def drawEpilogueScreen():
     WINDOW.fill(LIGHT_RED_GRAY)
-    epilogueBlock = [DESCRIPTION_FONT.render("Elwood died, but his beliefs and values cannot be killed;", 1, BLACK),
-                     DESCRIPTION_FONT.render("they persist under oppression, and transcend through time;", 1, BLACK),
-                     DESCRIPTION_FONT.render("they pass to those who survived, their children,", 1, BLACK),
-                     DESCRIPTION_FONT.render("and the children of their children...", 1, BLACK)]
+    epilogueBlock = [
+        DESCRIPTION_FONT.render(
+            "Elwood died, but his beliefs and values cannot be killed;", 1, BLACK
+        ),
+        DESCRIPTION_FONT.render(
+            "they persist under oppression, and transcend through time;", 1, BLACK
+        ),
+        DESCRIPTION_FONT.render(
+            "they pass to those who survived, their children,", 1, BLACK
+        ),
+        DESCRIPTION_FONT.render("and the children of their children...", 1, BLACK),
+    ]
     y = (WINDOW.get_height() // 3) + 30
     for text in epilogueBlock:
-        textRect = text.get_rect(center = (WINDOW.get_width() // 2, y))
+        textRect = text.get_rect(center=(WINDOW.get_width() // 2, y))
         WINDOW.blit(text, textRect)
         y += 25
+
 
 def resetGame(sessionStartTime):
     ground.clear()
@@ -398,6 +557,7 @@ def resetGame(sessionStartTime):
     turner = Character("Turner")
     global car
     car = Car(sessionStartTime)
+
 
 def main():
     fps = pygame.time.Clock()
@@ -432,7 +592,7 @@ def main():
                 game = "death screen"
             if returnToStartScreen(keys):
                 game = "start screen"
-        
+
         if game == "death screen":
             if pygame.time.get_ticks() - deathScreenStartTime > 2500:
                 game = "fail screen"
@@ -447,14 +607,15 @@ def main():
             if quitButton.isClicked():
                 epilogueScreenStartTime = pygame.time.get_ticks()
                 game = "epilogue screen"
-        
+
         if game == "epilogue screen":
             if pygame.time.get_ticks() - epilogueScreenStartTime >= 10000:
                 game = "start screen"
             drawEpilogueScreen()
-    
+
         pygame.display.flip()
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()
